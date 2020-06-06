@@ -2,9 +2,11 @@ import { ModuleWithProviders, NgModule } from '@angular/core';
 import { MapboxOptions } from 'mapbox-gl';
 import { GLOBAL_MAP_OPTIONS } from './constants';
 import { MapComponent } from './map/map.component';
+import { LayerComponent } from './layer/layer.component';
 
 const EXPORT_COMPONENTS = [
   MapComponent,
+  LayerComponent,
 ];
 
 @NgModule({

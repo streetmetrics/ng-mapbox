@@ -40,7 +40,7 @@ import { pickBy } from 'lodash';
   providers: [MapService],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class MapComponent implements AfterViewInit, OnDestroy, Omit<MapboxOptions, 'container'>, MapboxEvents {
+export class MapComponent implements AfterViewInit, Omit<MapboxOptions, 'container'>, MapboxEvents {
 
   /**
    * Map Input Variables
@@ -197,9 +197,5 @@ export class MapComponent implements AfterViewInit, OnDestroy, Omit<MapboxOption
         maxTileCacheSize: this.maxTileCacheSize,
       },
     });
-  }
-
-  ngOnDestroy(): void {
-    this.service.destroy();
   }
 }

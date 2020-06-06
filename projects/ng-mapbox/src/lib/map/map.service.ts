@@ -1,9 +1,8 @@
 import { Inject, Injectable, Optional } from '@angular/core';
-import { isNil, omitBy } from 'lodash';
-import { MapboxOptions } from 'mapbox-gl';
+import { isNil, omitBy, forIn } from 'lodash';
+import { AnyPaint, Layer, MapboxOptions } from 'mapbox-gl';
 import { AsyncSubject, Observable } from 'rxjs';
 import { GLOBAL_MAP_OPTIONS } from '../constants';
-import { EventManager } from '../helpers';
 import { MapboxEvents, SetupOptions } from './map';
 
 declare const mapboxgl;
@@ -12,7 +11,6 @@ declare const mapboxgl;
 export class MapService {
 
   private map: mapboxgl.Map;
-  private eventManager: EventManager;
 
   private mapCreated$ = new AsyncSubject<void>();
   private mapLoaded$ = new AsyncSubject<mapboxgl.Map>();
@@ -26,6 +24,57 @@ export class MapService {
   }
 
   constructor(@Optional() @Inject(GLOBAL_MAP_OPTIONS) private readonly globalOptions: Omit<MapboxOptions, 'container'>) {
+  }
+
+  /**
+   * Get Mapbox Event type from MapboxEvents object
+   * @param event - the key in MapboxEvents interface
+   * @private
+   */
+  private static getEventType(event: keyof MapboxEvents): string {
+    if (event === 'zoomChange') {
+      return 'zoom';
+    }
+    if (event === 'pitchChange') {
+      return 'pitch';
+    }
+    return event.toLowerCase();
+  }
+
+  /**
+   * Add Layer to Map instance
+   * @param layer - the Layer configuration to add
+   */
+  addLayer(layer: Layer): void {
+    this.map.addLayer(layer);
+  }
+
+  /**
+   * Update Layer filter
+   * @param id - the ID of the Layer to filter
+   * @param filter - filter args
+   */
+  setLayerFilter(id: string, filter: any): void {
+    this.map.setFilter(id, filter);
+  }
+
+  /**
+   * Update Layer Paint
+   * @param id - the ID of the Layer to update
+   * @param paint - the new Paint args
+   */
+  setLayerPaint(id: string, paint: AnyPaint): void {
+    forIn(paint, (value, key) => this.map.setPaintProperty(id, key, value));
+  }
+
+  /**
+   * Update Layer zoom range
+   * @param id - the ID of the Layer to update
+   * @param minZoom - the minimum zoom range value
+   * @param maxZoom - the maximum zoom range value
+   */
+  setLayerZoomRange(id: string, minZoom: number, maxZoom: number): void {
+    this.map.setLayerZoomRange(id, minZoom, maxZoom);
   }
 
   /**
@@ -45,24 +94,21 @@ export class MapService {
   }
 
   /**
-   * Destroy Mapbox Map instance
-   */
-  destroy(): void {
-    this.map.remove();
-  }
-
-  /**
    * Register Map load/create events and setup EventManager
    * @param events - MapboxEvents object passed from MapComponent
    * @private
    */
   private registerEvents(events: MapboxEvents): void {
+    this.mapCreated$.next();
+    this.mapCreated$.complete();
     this.map.once('load', () => {
       this.mapLoaded$.next(this.map);
       this.mapLoaded$.complete();
     });
-    this.eventManager = new EventManager(this.map, events);
-    this.mapCreated$.next();
-    this.mapCreated$.complete();
+    forIn(events, (emitter, event: keyof MapboxEvents) => {
+      if (emitter.observers.length) {
+        this.map.on(MapService.getEventType(event), (mapboxEvent: any) => emitter.emit(mapboxEvent));
+      }
+    });
   }
 }
