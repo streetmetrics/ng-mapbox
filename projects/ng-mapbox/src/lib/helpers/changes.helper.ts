@@ -22,7 +22,7 @@ export class ChangesHelper {
    * @param callback - callback function to call for each changed property
    */
   static hasChangeEach(changes: SimpleChanges, keys: string[], callback: (key) => void): void {
-    return keys.forEach((key) => {
+    keys.forEach((key) => {
       if (this.hasChange(changes, key)) {
         callback(key);
       }
@@ -35,6 +35,7 @@ export class ChangesHelper {
    * @param keys - properties to check for changes on
    */
   static hasOneChange(changes: SimpleChanges, keys: string[]): boolean {
-    return keys.findIndex(key => this.hasChange(changes, key)) !== -1;
+    const index = keys.findIndex(key => this.hasChange(changes, key));
+    return index !== -1;
   }
 }

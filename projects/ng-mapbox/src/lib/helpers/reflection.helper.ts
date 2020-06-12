@@ -19,7 +19,8 @@ export class ReflectionHelper {
    * @param component - the Component to scan for @Output() properties
    */
   static getActiveOutputs<T>(component: any): Partial<T> {
-    return pickBy(component, value => value instanceof EventEmitter && !!value.observers.length);
+    const outputs = pickBy(component, value => value instanceof EventEmitter && !!value.observers.length);
+    return outputs;
   }
 
   /**

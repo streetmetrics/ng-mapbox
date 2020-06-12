@@ -1,13 +1,17 @@
 {
-  "name": "ng-mapbox",
-  "version": "alpha-1.0.0",
+  "name": "@streetmetrics/ng-mapbox",
+  "version": "1.0.0-alpha",
   "description": "Angular bindings for mapbox-gl",
   "author": "Greyson Von Hagel",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/streetmetrics/ng-mapbox.git"
+  },
   "peerDependencies": {
     "@angular/common": "^9.1.9",
     "@angular/core": "^9.1.9",
-    "mapbox-gl": "^1.10.1"
+    "mapbox-gl": "^1.11.0"
   },
   "dependencies": {
     "tslib": "^1.10.0"

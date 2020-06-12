@@ -1,13 +1,17 @@
 {
-  "name": "ng-mapbox",
-  "version": "alpha-1.0.0",
+  "name": "@streetmetrics/ng-mapbox",
+  "version": "1.0.0-alpha",
   "description": "Angular bindings for mapbox-gl",
   "author": "Greyson Von Hagel",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/streetmetrics/ng-mapbox.git"
+  },
   "scripts": {
     "ng": "ng",
-    "build": "ng build",
-    "build:publish": "yarn build && cd dist && npm publish",
+    "build": "rimfaf dist && ng build --prod",
+    "build:publish": "yarn build && cd dist/ng-mapbox && npm publish",
     "test": "ng test",
     "lint": "ng lint",
     "e2e": "ng e2e"
@@ -42,6 +46,7 @@
     "@types/node": "^12.11.1",
     "codelyzer": "^5.1.2",
     "ng-packagr": "^9.0.0",
+    "rimraf": "^3.0.2",
     "ts-node": "~8.3.0",
     "tslint": "~6.1.0",
     "typescript": "~3.8.3"
