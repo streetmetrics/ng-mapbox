@@ -1,6 +1,9 @@
 {
   "name": "ng-mapbox",
-  "version": "0.0.1",
+  "version": "alpha-1.0.0",
+  "description": "Angular bindings for mapbox-gl",
+  "author": "Greyson Von Hagel",
+  "license": "MIT",
   "peerDependencies": {
     "@angular/common": "^9.1.9",
     "@angular/core": "^9.1.9",
