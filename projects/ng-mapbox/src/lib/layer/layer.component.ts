@@ -1,8 +1,21 @@
-import { ChangeDetectionStrategy, Component, Input, OnChanges, OnInit, SimpleChanges, Output, EventEmitter } from '@angular/core';
-import { forIn, isNil, omitBy, pickBy } from 'lodash';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  OnInit,
+  Input,
+  Output,
+  EventEmitter,
+  Optional,
+  OnChanges,
+  SimpleChanges,
+  OnDestroy,
+} from '@angular/core';
 import { AnyLayout, AnyPaint, AnySourceData, Layer, MapLayerMouseEvent, MapLayerTouchEvent } from 'mapbox-gl';
-import { MapService } from '../map/map.service';
+import { ChangesHelper } from '../helpers';
 import { LayerEvents } from './layer';
+import { ConfigurableMapComponent } from '../abstract';
+import { MapComponent } from '../map/map.component';
+import { isNil, forIn } from 'lodash';
 
 declare const mapboxgl;
 
@@ -11,14 +24,14 @@ declare const mapboxgl;
   template: '',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class LayerComponent implements OnInit, OnChanges, Layer, LayerEvents {
+export class LayerComponent extends ConfigurableMapComponent<Layer> implements OnInit, OnChanges, OnDestroy, Layer, LayerEvents {
 
   /* Static Inputs */
   @Input() id: string;
   @Input() source: string | AnySourceData;
   @Input() type: 'fill' | 'line' | 'symbol' | 'circle' | 'fill-extrusion' | 'raster' | 'background' | 'heatmap' | 'hillshade';
   @Input() metadata?: any;
-  @Input() sourceLayer?: string;
+  @Input() 'source-layer'?: string;
   @Input() interactive: boolean;
   @Input() ref: string;
 
@@ -30,12 +43,10 @@ export class LayerComponent implements OnInit, OnChanges, Layer, LayerEvents {
   @Input() paint?: AnyPaint;
 
   /* Custom Inputs */
-  @Input() visible: boolean;
+  @Input() visible?: boolean;
 
-  /**
-   * Layer config Input to be used instead of individual property Input(s)
-   */
-  @Input() config: Layer;
+  /* (Static) Config Input used with/instead of individual properties */
+  @Input() config: Omit<Layer, 'id'>;
 
   /* Layer Event Outputs */
   @Output() click: EventEmitter<MapLayerMouseEvent>;
@@ -52,77 +63,76 @@ export class LayerComponent implements OnInit, OnChanges, Layer, LayerEvents {
   @Output() touchEnd: EventEmitter<MapLayerTouchEvent>;
   @Output() touchCancel: EventEmitter<MapLayerTouchEvent>;
 
-  /* Whether or not the Layer has been added to the Map */
-  private isLoaded = false;
-
-  /* Get Layer visibility Layout value */
-  private get visibility(): 'visible' | 'none' {
-    return this.visible && 'visible' || 'none';
-  }
-
-  constructor(private service: MapService) {
+  constructor(@Optional() protected mapComponent: MapComponent) {
+    super(mapComponent);
   }
 
   ngOnInit(): void {
-    this.service.mapLoaded.subscribe((map) => {
-      this.service.addLayer(this.buildLayer());
+    this.mapComponent.mapLoaded$.subscribe((map) => {
+      this.addLayer(map);
       this.bindEvents(map);
-      this.isLoaded = true;
     });
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    if (!this.isLoaded) {
+    if (!this.mapInstance.getLayer(this.id)) {
       return;
     }
-    if (changes.filter && !changes.filter.isFirstChange()) {
-      this.service.setLayerFilter(this.config.id || this.id, this.filter);
+    const map = this.mapInstance;
+    if (ChangesHelper.hasChange(changes, 'filter')) {
+      map.setFilter(this.id, this.filter);
     }
-    if (changes.paint && !changes.paint.isFirstChange()) {
-      this.service.setLayerPaint(this.config.id || this.id, this.paint);
+    if (ChangesHelper.hasChange(changes, 'layout')) {
+      this.updateAllProperties('Layout', map);
     }
-    if ((changes.minzoom && !changes.minzoom.isFirstChange()) || (changes.maxzoom && !changes.maxzoom.isFirstChange())) {
-      this.service.setLayerZoomRange(this.config.id || this.id, this.minzoom, this.maxzoom);
+    if (ChangesHelper.hasOneChange(changes, ['maxzoom', 'minzoom'])) {
+      map.setLayerZoomRange(this.id, this.minzoom || 0, this.maxzoom || 20);
+    }
+    if (ChangesHelper.hasChange(changes, 'paint')) {
+      this.updateAllProperties('Paint', map);
+    }
+  }
+
+  ngOnDestroy(): void {
+    if (!!this.mapInstance.getLayer(this.id)) {
+      this.mapInstance.removeLayer(this.id);
     }
   }
 
   /**
-   * Bind Layer events and pass to @Output()
-   * @param map - the Mapbox Map instance this Layer belongs to
+   * Assemble Layer from @Inputs and add it to Map
+   * @param map - the Mapbox Map to add this Layer to
+   * @private
+   */
+  private addLayer(map: mapboxgl.Map): void {
+    if (!isNil(this.visible) && !isNil(this.layout)) {
+      this.layout.visibility = this.visible && 'visible' || 'none';
+    }
+    const layer = this.assemble(['visible']) as Layer;
+    map.addLayer(layer);
+  }
+
+  /**
+   * Bind Layer Events from @Outputs
+   * @param map - the Mapbox Map to listen for Layer Events on
    * @private
    */
   private bindEvents(map: mapboxgl.Map): void {
-    const events = pickBy(this, value => value instanceof EventEmitter) as any as LayerEvents;
-    forIn(events, (emitter, event: any | keyof LayerEvents) => {
-      if (emitter.observers.length) {
-        map.on(event.toLowerCase(), this.config.id || this.id, (mapboxEvent: any) => emitter.emit(mapboxEvent));
-      }
-    });
+    const events = this.getEvents<LayerEvents>();
+    const nameMap = { zoomChange: 'zoom', pitchChange: 'pitch' };
+    forIn(events, (emitter, event: any) => map.on(
+      event in nameMap && nameMap[event] || event.toLowerCase(),
+      this.id, mapboxEvent => emitter.emit(mapboxEvent)),
+    );
   }
 
   /**
-   * Build Layer from @Input() variables and remove nil values
+   * Update all Layout or Paint properties of this Layer
+   * @param type - whether we're updating Layout or Paint properties
+   * @param map - the Mapbox Map this Layer belongs to
    * @private
    */
-  private buildLayer(): Layer {
-    if (!isNil(this.visible) && !isNil(this.layout)) {
-      this.layout.visibility = this.visibility;
-    }
-    const config: Layer = {
-      ...this.config,
-      id: this.id,
-      source: this.source,
-      type: this.type,
-      metadata: this.metadata,
-      'source-layer': this.sourceLayer,
-      interactive: this.interactive,
-      ref: this.ref,
-      filter: this.filter,
-      layout: this.layout,
-      maxzoom: this.maxzoom,
-      minzoom: this.minzoom,
-      paint: this.paint,
-    };
-    return omitBy(config, isNil) as Layer;
+  private updateAllProperties(type: 'Layout' | 'Paint', map: mapboxgl.Map): void {
+    forIn(this.layout, (value, key) => map[`set${type}Property`](this.id, key, value));
   }
 }
