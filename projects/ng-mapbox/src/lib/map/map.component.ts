@@ -29,7 +29,7 @@ import {
 import { AsyncSubject } from 'rxjs';
 import { GLOBAL_MAP_OPTIONS } from '../constants';
 import { ChangesHelper, ReflectionHelper } from '../helpers';
-import { MapboxEvents } from './map';
+import { GlobalOptions, MapboxEvents } from './map';
 
 declare const mapboxgl;
 
@@ -147,7 +147,7 @@ export class MapComponent implements AfterViewInit, OnChanges, OnDestroy, Mapbox
   public readonly mapCreated$ = new AsyncSubject<mapboxgl.Map>();
   public readonly mapLoaded$ = new AsyncSubject<mapboxgl.Map>();
 
-  constructor(@Optional() @Inject(GLOBAL_MAP_OPTIONS) private readonly globalOptions: Omit<MapboxOptions, 'container'> = {}) {
+  constructor(@Optional() @Inject(GLOBAL_MAP_OPTIONS) private readonly globalOptions: GlobalOptions) {
   }
 
   ngAfterViewInit(): void {
@@ -185,11 +185,12 @@ export class MapComponent implements AfterViewInit, OnChanges, OnDestroy, Mapbox
    * @private
    */
   private setup(): void {
-    const options = ReflectionHelper.getInputs<MapboxOptions>(this, ['config'], { ...this.globalOptions, ...this.config });
+    const options = ReflectionHelper.getInputs<MapboxOptions>(this, ['config'], { ...this.globalOptions.options, ...this.config });
     options.container = this.container;
     this.map = new mapboxgl.Map(options);
     this.mapCreated$.next(this.map);
     this.mapCreated$.complete();
+    this.globalOptions.controls.forEach(control => this.map.addControl(control, this.globalOptions.controlPosition));
     this.map.on('load', () => {
       this.mapLoaded$.next(this.map);
       this.mapLoaded$.complete();

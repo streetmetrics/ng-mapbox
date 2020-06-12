@@ -1,6 +1,6 @@
 import { ModuleWithProviders, NgModule } from '@angular/core';
-import { MapboxOptions } from 'mapbox-gl';
 import { GLOBAL_MAP_OPTIONS } from './constants';
+import { GlobalOptions } from './map/map';
 import { MapComponent } from './map/map.component';
 import { LayerComponent } from './layer/layer.component';
 import { MarkerComponent } from './marker/marker.component';
@@ -9,6 +9,7 @@ import { ImageComponent } from './image/image.component';
 import { VectorSourceComponent } from './source/vector.component';
 import { GeoJSONComponent } from './source/geojson.component';
 import { BoundsComponent } from './bounds/bounds.component';
+import { NavigationControlComponent } from './control/navigation/navigation.component';
 
 const EXPORT_COMPONENTS = [
   MapComponent,
@@ -17,6 +18,7 @@ const EXPORT_COMPONENTS = [
   ImageComponent,
   LayerComponent,
   MarkerComponent,
+  NavigationControlComponent,
   PopupDirective,
   VectorSourceComponent,
 ];
@@ -31,13 +33,16 @@ const EXPORT_COMPONENTS = [
 })
 export class SmMapboxModule {
 
-  static forRoot(options: Omit<MapboxOptions, 'container'>): ModuleWithProviders {
+  static forRoot(options: GlobalOptions): ModuleWithProviders {
     return {
       ngModule: SmMapboxModule,
       providers: [
         {
           provide: GLOBAL_MAP_OPTIONS,
-          useValue: options,
+          useValue: <GlobalOptions>{
+            options: options?.options || {},
+            controls: options?.controls || [],
+          },
         },
       ],
     };

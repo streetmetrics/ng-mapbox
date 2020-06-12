@@ -1,5 +1,6 @@
 import { EventEmitter } from '@angular/core';
 import {
+  Control,
   ErrorEvent,
   MapboxEvent, MapboxOptions,
   MapBoxZoomEvent,
@@ -13,11 +14,12 @@ import {
 } from 'mapbox-gl';
 
 /**
- * MapService setup options
+ * Global Map setup options
  */
-export interface SetupOptions {
-  options: MapboxOptions;
-  events: MapboxEvents;
+export interface GlobalOptions {
+  options: Omit<MapboxOptions, 'container'>;
+  controls: Control[];
+  controlPosition?: 'top-right' | 'top-left' | 'bottom-right' | 'bottom-left';
 }
 
 /**
