@@ -10,8 +10,11 @@
       "prefix": "sm",
       "schematics": {
         "@schematics/angular:component": {
-          "style": "scss",
-          "skipTests": true
+          "changeDetection": "OnPush",
+          "inlineTemplate": true,
+          "inlineStyle": true,
+          "skipTests": true,
+          "style": "scss"
         }
       },
       "architect": {

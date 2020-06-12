@@ -2,33 +2,36 @@ import {
   AfterViewInit,
   ChangeDetectionStrategy,
   Component,
-  ElementRef,
-  ViewChild,
-  Input,
   EventEmitter,
-  Output,
-  OnDestroy,
+  Inject,
+  Input,
+  OnChanges, OnDestroy,
+  Optional,
+  Output, SimpleChanges,
+  ViewChild,
 } from '@angular/core';
+import { forIn, upperFirst } from 'lodash';
 import {
-  FitBoundsOptions,
+  ErrorEvent,
   LngLatBoundsLike,
   LngLatLike,
-  MapboxOptions,
-  Style,
   MapboxEvent,
-  ErrorEvent,
+  MapboxOptions, MapBoxZoomEvent,
   MapContextEvent,
   MapDataEvent,
+  MapMouseEvent,
   MapSourceDataEvent,
   MapStyleDataEvent,
-  MapBoxZoomEvent,
   MapTouchEvent,
-  MapMouseEvent,
   MapWheelEvent,
+  Style,
 } from 'mapbox-gl';
-import { MapService } from './map.service';
+import { AsyncSubject } from 'rxjs';
+import { GLOBAL_MAP_OPTIONS } from '../constants';
+import { ChangesHelper, ReflectionHelper } from '../helpers';
 import { MapboxEvents } from './map';
-import { pickBy } from 'lodash';
+
+declare const mapboxgl;
 
 @Component({
   selector: 'sm-map',
@@ -37,69 +40,60 @@ import { pickBy } from 'lodash';
     ':host { display: block; height: 100%; width: 100%; }',
     'div { height: 100%; width: 100% }',
   ],
-  providers: [MapService],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class MapComponent implements AfterViewInit, Omit<MapboxOptions, 'container'>, MapboxEvents {
+export class MapComponent implements AfterViewInit, OnChanges, OnDestroy, MapboxOptions, MapboxEvents {
 
-  /**
-   * Map Input Variables
-   */
+  /* Static Input Variables */
   @Input() accessToken?: string;
   @Input() antialias?: boolean;
   @Input() attributionControl?: boolean;
-  @Input() bearing?: number;
   @Input() bearingSnap?: number;
-  @Input() bounds?: LngLatBoundsLike;
-  @Input() boxZoom?: boolean;
-  @Input() center?: LngLatLike;
   @Input() clickTolerance?: number;
   @Input() collectResourceTiming?: boolean;
   @Input() crossSourceCollisions?: boolean;
   @Input() customAttribution?: string | string[];
-  @Input() doubleClickZoom?: boolean;
-  @Input() dragPan?: boolean;
-  @Input() dragRotate?: boolean;
   @Input() fadeDuration?: number;
   @Input() failIfMajorPerformanceCaveat?: boolean;
-  @Input() fitBoundsOptions?: FitBoundsOptions;
   @Input() hash?: boolean | string;
   @Input() interactive?: boolean;
-  @Input() keyboard?: boolean;
   @Input() localIdeographFontFamily?: string;
   @Input() locale?: { [p: string]: string };
   @Input() logoPosition?: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
-  @Input() maxBounds?: LngLatBoundsLike;
-  @Input() maxPitch?: number;
   @Input() maxTileCacheSize?: number;
-  @Input() maxZoom?: number;
+  @Input() maxPitch?: number;
   @Input() minPitch?: number;
-  @Input() minZoom?: number;
-  @Input() pitch?: number;
   @Input() pitchWithRotate?: boolean;
   @Input() preserveDrawingBuffer?: boolean;
   @Input() refreshExpiredTiles?: boolean;
   @Input() renderWorldCopies?: boolean;
+  @Input() touchPitch?: boolean;
+  @Input() trackResize?: boolean;
+
+  /* Dynamic Inputs */
+  @Input() bearing?: number;
+  @Input() boxZoom?: boolean;
+  @Input() center?: LngLatLike;
+  @Input() doubleClickZoom?: boolean;
+  @Input() dragPan?: boolean;
+  @Input() dragRotate?: boolean;
+  @Input() keyboard?: boolean;
+  @Input() maxBounds?: LngLatBoundsLike;
+  @Input() maxZoom?: number;
+  @Input() minZoom?: number;
+  @Input() pitch?: number;
   @Input() scrollZoom?: boolean;
   @Input() style?: Style | string;
-  @Input() touchPitch?: boolean;
   @Input() touchZoomRotate?: boolean;
-  @Input() trackResize?: boolean;
   @Input() zoom?: number;
 
-  /**
-   * Mapbox Options Input to be used instead of individual property Input(s)
-   */
-  @Input() options?: Omit<MapboxOptions, 'container'> = {};
+  /* (Static) Config Input used with/instead of individual properties */
+  @Input() config?: Omit<MapboxOptions, 'container'>;
 
-  /**
-   * Map Container
-   */
-  @ViewChild('container', { static: true, read: ElementRef }) container: ElementRef;
+  /* Map Container */
+  @ViewChild('container', { static: true, read: HTMLElement }) container: HTMLElement;
 
-  /**
-   * Mapbox Event Outputs
-   */
+  /* Mapbox Event Outputs */
   @Output() error = new EventEmitter<ErrorEvent>();
   @Output() load = new EventEmitter<MapboxEvent>();
   @Output() remove = new EventEmitter<MapboxEvent>();
@@ -146,56 +140,60 @@ export class MapComponent implements AfterViewInit, Omit<MapboxOptions, 'contain
   @Output() pitchEnd = new EventEmitter<MapboxEvent<MouseEvent | TouchEvent>>();
   @Output() wheel = new EventEmitter<MapWheelEvent>();
 
-  constructor(private service: MapService) {
+  /** Mapbox Map instance */
+  public map: mapboxgl.Map;
+
+  /** Map Ready Events */
+  public readonly mapCreated$ = new AsyncSubject<mapboxgl.Map>();
+  public readonly mapLoaded$ = new AsyncSubject<mapboxgl.Map>();
+
+  constructor(@Optional() @Inject(GLOBAL_MAP_OPTIONS) private readonly globalOptions: Omit<MapboxOptions, 'container'> = {}) {
   }
 
   ngAfterViewInit(): void {
-    this.service.setup({
-      events: pickBy(this, value => value instanceof EventEmitter) as MapboxEvents,
-      options: {
-        ...this.options,
-        container: this.container.nativeElement,
-        antialias: this.antialias,
-        attributionControl: this.attributionControl,
-        bearing: this.bearing,
-        bearingSnap: this.bearingSnap,
-        bounds: this.bounds,
-        boxZoom: this.boxZoom,
-        center: this.center,
-        clickTolerance: this.clickTolerance,
-        collectResourceTiming: this.collectResourceTiming,
-        crossSourceCollisions: this.crossSourceCollisions,
-        customAttribution: this.customAttribution,
-        dragPan: this.dragPan,
-        dragRotate: this.dragRotate,
-        doubleClickZoom: this.doubleClickZoom,
-        hash: this.hash,
-        fadeDuration: this.fadeDuration,
-        failIfMajorPerformanceCaveat: this.failIfMajorPerformanceCaveat,
-        fitBoundsOptions: this.fitBoundsOptions,
-        interactive: this.interactive,
-        keyboard: this.keyboard,
-        locale: this.locale,
-        localIdeographFontFamily: this.localIdeographFontFamily,
-        logoPosition: this.logoPosition,
-        maxBounds: this.maxBounds,
-        maxPitch: this.maxPitch,
-        maxZoom: this.maxZoom,
-        minPitch: this.minPitch,
-        minZoom: this.minZoom,
-        preserveDrawingBuffer: this.preserveDrawingBuffer,
-        pitch: this.pitch,
-        pitchWithRotate: this.pitchWithRotate,
-        refreshExpiredTiles: this.refreshExpiredTiles,
-        renderWorldCopies: this.renderWorldCopies,
-        scrollZoom: this.scrollZoom,
-        style: this.style,
-        trackResize: this.trackResize,
-        touchZoomRotate: this.touchZoomRotate,
-        touchPitch: this.touchPitch,
-        zoom: this.zoom,
-        maxTileCacheSize: this.maxTileCacheSize,
-      },
+    this.setup();
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
+    ChangesHelper.hasChangeEach(
+      changes,
+      ['bearing', 'center', 'maxBounds', 'maxZoom', 'minZoom', 'pitch', 'style', 'zoom'],
+      key => this.map[`set${upperFirst(key)}`](this[key]),
+    );
+    ChangesHelper.hasChangeEach(
+      changes,
+      ['boxZoom', 'doubleClickZoom', 'dragPan', 'dragRotate', 'keyboard', 'scrollZoom', 'touchZoomRotate'],
+      key => this[key] ? this.map[key].enable() : this.map[key].disable(),
+    );
+  }
+
+  ngOnDestroy(): void {
+    this.map.remove();
+  }
+
+  /**
+   * Bind Map Events from @Outputs
+   * @private
+   */
+  private bindEvents(): void {
+    const events = ReflectionHelper.getActiveOutputs<MapboxEvents>(this);
+    forIn(events, (emitter, event: any) => this.map.on(event, mapboxEvent => emitter.emit(mapboxEvent)));
+  }
+
+  /**
+   * Setup Mapbox Map from Global options and @Input() properties
+   * @private
+   */
+  private setup(): void {
+    const options = ReflectionHelper.getInputs<MapboxOptions>(this, ['config'], { ...this.globalOptions, ...this.config });
+    options.container = this.container;
+    this.map = new mapboxgl.Map(options);
+    this.mapCreated$.next(this.map);
+    this.mapCreated$.complete();
+    this.map.on('load', () => {
+      this.mapLoaded$.next(this.map);
+      this.mapLoaded$.complete();
+      this.bindEvents();
     });
   }
 }
