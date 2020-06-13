@@ -31,7 +31,7 @@ export class LayerComponent extends ConfigurableMapComponent<Layer> implements O
   @Input() source: string | AnySourceData;
   @Input() type: 'fill' | 'line' | 'symbol' | 'circle' | 'fill-extrusion' | 'raster' | 'background' | 'heatmap' | 'hillshade';
   @Input() metadata?: any;
-  @Input() 'source-layer'?: string;
+  @Input('source-layer') sourceLayer?: string;
   @Input() interactive: boolean;
   @Input() ref: string;
 

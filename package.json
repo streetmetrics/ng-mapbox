@@ -1,6 +1,6 @@
 {
   "name": "@streetmetrics/ng-mapbox",
-  "version": "1.0.1-alpha",
+  "version": "1.0.2-alpha",
   "description": "Angular bindings for mapbox-gl",
   "author": "Greyson Von Hagel",
   "license": "MIT",
