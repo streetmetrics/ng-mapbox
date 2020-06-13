@@ -2,6 +2,7 @@ import {
   AfterViewInit,
   ChangeDetectionStrategy,
   Component,
+  ElementRef,
   EventEmitter,
   Inject,
   Input,
@@ -91,7 +92,7 @@ export class MapComponent implements AfterViewInit, OnChanges, OnDestroy, Mapbox
   @Input() config?: Omit<MapboxOptions, 'container'>;
 
   /* Map Container */
-  @ViewChild('container', { static: true, read: HTMLElement }) container: HTMLElement;
+  @ViewChild('container', { static: true, read: ElementRef }) container: ElementRef | any;
 
   /* Mapbox Event Outputs */
   @Output() error = new EventEmitter<ErrorEvent>();
@@ -186,7 +187,7 @@ export class MapComponent implements AfterViewInit, OnChanges, OnDestroy, Mapbox
    */
   private setup(): void {
     const options = ReflectionHelper.getInputs<MapboxOptions>(this, ['config'], { ...this.globalOptions.options, ...this.config });
-    options.container = this.container;
+    options.container = this.container.nativeElement;
     this.map = new mapboxgl.Map(options);
     this.mapCreated$.next(this.map);
     this.mapCreated$.complete();

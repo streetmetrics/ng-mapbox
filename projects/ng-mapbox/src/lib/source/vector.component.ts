@@ -1,5 +1,5 @@
 import { Component, OnInit, ChangeDetectionStrategy, Input, OnChanges, SimpleChanges, Optional, OnDestroy } from '@angular/core';
-import { PromoteIdSpecification, VectorSource } from 'mapbox-gl';
+import { GeoJSONSource, PromoteIdSpecification, VectorSource } from 'mapbox-gl';
 import { ConfigurableMapComponent } from '../abstract';
 import { ChangesHelper } from '../helpers';
 import { MapComponent } from '../map/map.component';
@@ -29,6 +29,11 @@ export class VectorSourceComponent extends ConfigurableMapComponent<VectorSource
 
   readonly type = 'vector';
 
+  /* Retrieve loaded Source */
+  private get source(): VectorSource {
+    return this.mapInstance && this.mapInstance.getSource(this.id) as VectorSource;
+  }
+
   constructor(@Optional() protected mapComponent: MapComponent) {
     super(mapComponent);
   }
@@ -38,7 +43,7 @@ export class VectorSourceComponent extends ConfigurableMapComponent<VectorSource
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    if (!this.mapInstance.getSource(this.id)) {
+    if (!this.source) {
       return;
     }
     if (ChangesHelper.hasOneChange(changes, ['attribution', 'bounds', 'maxzoom', 'minzoom', 'promoteId', 'scheme', 'tiles', 'url'])) {
@@ -48,7 +53,7 @@ export class VectorSourceComponent extends ConfigurableMapComponent<VectorSource
   }
 
   ngOnDestroy() {
-    if (!!this.mapInstance.getSource(this.id)) {
+    if (!!this.source) {
       this.mapInstance.removeSource(this.id);
     }
   }

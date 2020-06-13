@@ -63,6 +63,11 @@ export class LayerComponent extends ConfigurableMapComponent<Layer> implements O
   @Output() touchEnd: EventEmitter<MapLayerTouchEvent>;
   @Output() touchCancel: EventEmitter<MapLayerTouchEvent>;
 
+  /* Retrieve loaded Layer */
+  private get layer(): Layer {
+    return this.mapInstance && this.mapInstance.getLayer(this.id);
+  }
+
   constructor(@Optional() protected mapComponent: MapComponent) {
     super(mapComponent);
   }
@@ -75,7 +80,7 @@ export class LayerComponent extends ConfigurableMapComponent<Layer> implements O
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    if (!this.mapInstance.getLayer(this.id)) {
+    if (!this.layer) {
       return;
     }
     const map = this.mapInstance;
@@ -94,7 +99,7 @@ export class LayerComponent extends ConfigurableMapComponent<Layer> implements O
   }
 
   ngOnDestroy(): void {
-    if (!!this.mapInstance.getLayer(this.id)) {
+    if (!!this.layer) {
       this.mapInstance.removeLayer(this.id);
     }
   }

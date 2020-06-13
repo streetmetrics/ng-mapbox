@@ -38,7 +38,7 @@ export class GeoJSONComponent extends ConfigurableMapComponent<GeoJSONSourceOpti
 
   /* Retrieve loaded Source */
   private get source(): GeoJSONSource {
-    return this.mapInstance.getSource(this.id) as GeoJSONSource;
+    return this.mapInstance && this.mapInstance.getSource(this.id) as GeoJSONSource;
   }
 
   /* Get or set Source data */
