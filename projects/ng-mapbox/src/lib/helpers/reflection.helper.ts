@@ -32,9 +32,9 @@ export class ReflectionHelper {
   static getInputs<T>(component: any, omit: string[] = [], extra: Record<string, any> = {}): Partial<T> {
     const properties: Record<string, DecoratorInvocation[]> = (component.constructor as any).propDecorators;
     const inputs: Partial<T> = chain(properties)
-      .omit(omit)
-      .reject(prop => get(prop, '[0].type.prototype.ngMetadataName') !== 'Input')
+      .omitBy((prop, key) => omit.includes(key) || get(prop, '[0].type.prototype.ngMetadataName') !== 'Input')
       .transform((accum, value, key) => accum[get(value, '[0].args[0]') || key] = this[key], {})
+      .omitBy(isNil)
       .value();
     return omitBy<Partial<T>>({ ...extra, ...inputs }, isNil);
   }
