@@ -49,23 +49,28 @@ export class LayerComponent extends ConfigurableMapComponent<Layer> implements O
   @Input() config: Omit<Layer, 'id'>;
 
   /* Layer Event Outputs */
-  @Output() click: EventEmitter<MapLayerMouseEvent>;
-  @Output() mouseEnter: EventEmitter<MapLayerMouseEvent>;
-  @Output() mouseLeave: EventEmitter<MapLayerMouseEvent>;
-  @Output() mouseMove: EventEmitter<MapLayerMouseEvent>;
-  @Output() dblClick: EventEmitter<MapLayerMouseEvent>;
-  @Output() mouseDown: EventEmitter<MapLayerMouseEvent>;
-  @Output() mouseUp: EventEmitter<MapLayerMouseEvent>;
-  @Output() mouseOver: EventEmitter<MapLayerMouseEvent>;
-  @Output() mouseOut: EventEmitter<MapLayerMouseEvent>;
-  @Output() contextMenu: EventEmitter<MapLayerMouseEvent>;
-  @Output() touchStart: EventEmitter<MapLayerTouchEvent>;
-  @Output() touchEnd: EventEmitter<MapLayerTouchEvent>;
-  @Output() touchCancel: EventEmitter<MapLayerTouchEvent>;
+  @Output() click = new EventEmitter<MapLayerMouseEvent>();
+  @Output() mouseEnter = new EventEmitter<MapLayerMouseEvent>();
+  @Output() mouseLeave = new EventEmitter<MapLayerMouseEvent>();
+  @Output() mouseMove = new EventEmitter<MapLayerMouseEvent>();
+  @Output() dblClick = new EventEmitter<MapLayerMouseEvent>();
+  @Output() mouseDown = new EventEmitter<MapLayerMouseEvent>();
+  @Output() mouseUp = new EventEmitter<MapLayerMouseEvent>();
+  @Output() mouseOver = new EventEmitter<MapLayerMouseEvent>();
+  @Output() mouseOut = new EventEmitter<MapLayerMouseEvent>();
+  @Output() contextMenu = new EventEmitter<MapLayerMouseEvent>();
+  @Output() touchStart = new EventEmitter<MapLayerTouchEvent>();
+  @Output() touchEnd = new EventEmitter<MapLayerTouchEvent>();
+  @Output() touchCancel = new EventEmitter<MapLayerTouchEvent>();
 
   /* Retrieve loaded Layer */
   private get layer(): Layer {
     return this.mapInstance && this.mapInstance.getLayer(this.id);
+  }
+
+  /* Get Layout visibility value */
+  private get visibility(): 'visible' | 'none' {
+    return this.visible && 'visible' || 'none';
   }
 
   constructor(@Optional() protected mapComponent: MapComponent) {
@@ -84,6 +89,9 @@ export class LayerComponent extends ConfigurableMapComponent<Layer> implements O
       return;
     }
     const map = this.mapInstance;
+    if (ChangesHelper.hasChange(changes, 'visible')) {
+      map.setLayoutProperty(this.id, 'visibility', this.visibility);
+    }
     if (ChangesHelper.hasChange(changes, 'filter')) {
       map.setFilter(this.id, this.filter);
     }
@@ -110,8 +118,8 @@ export class LayerComponent extends ConfigurableMapComponent<Layer> implements O
    * @private
    */
   private addLayer(map: mapboxgl.Map): void {
-    if (!isNil(this.visible) && !isNil(this.layout)) {
-      this.layout.visibility = this.visible && 'visible' || 'none';
+    if (!isNil(this.visible)) {
+      (this.layout || (this.layout = {})).visibility = this.visibility;
     }
     const layer = this.assemble(['visible']) as Layer;
     map.addLayer(layer);
