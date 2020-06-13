@@ -33,7 +33,7 @@ export class ReflectionHelper {
     const properties: Record<string, DecoratorInvocation[]> = (component.constructor as any).propDecorators;
     const inputs: Partial<T> = chain(properties)
       .omitBy((prop, key) => omit.includes(key) || get(prop, '[0].type.prototype.ngMetadataName') !== 'Input')
-      .transform((accum, value, key) => accum[get(value, '[0].args[0]') || key] = this[key], {})
+      .transform((accum, value, key) => accum[get(value, '[0].args[0]') || key] = component[key], {})
       .omitBy(isNil)
       .value();
     return omitBy<Partial<T>>({ ...extra, ...inputs }, isNil);

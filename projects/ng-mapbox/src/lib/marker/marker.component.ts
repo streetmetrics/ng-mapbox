@@ -6,7 +6,11 @@ import {
   ViewChild,
   OnChanges,
   SimpleChanges,
-  Optional, Output, EventEmitter, ElementRef, OnDestroy,
+  Optional,
+  Output,
+  EventEmitter,
+  ElementRef,
+  OnDestroy,
 } from '@angular/core';
 import { MarkerOptions, Alignment, PointLike, Anchor, LngLatLike, MapboxEvent } from 'mapbox-gl';
 import { AsyncSubject } from 'rxjs';

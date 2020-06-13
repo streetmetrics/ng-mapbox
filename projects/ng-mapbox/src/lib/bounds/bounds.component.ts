@@ -1,10 +1,10 @@
 import { Component, OnInit, ChangeDetectionStrategy, OnChanges, SimpleChanges, Optional, Input, Inject } from '@angular/core';
 import { Polygon } from 'geojson';
-import { FitBoundsOptions, LngLatBoundsLike, MapboxOptions } from 'mapbox-gl';
+import { FitBoundsOptions, LngLatBoundsLike } from 'mapbox-gl';
 import { ConfigurableMapComponent } from '../abstract';
 import { GLOBAL_MAP_OPTIONS } from '../constants';
 import { ChangesHelper } from '../helpers';
-import { GlobalOptions } from '../map/map';
+import { OptionsWithControls } from '../map/map';
 import { MapComponent } from '../map/map.component';
 import { some, isNil } from 'lodash';
 
@@ -25,7 +25,7 @@ export class BoundsComponent extends ConfigurableMapComponent<FitBoundsOptions> 
   @Input() bounds?: Polygon | LngLatBoundsLike;
   @Input() options?: FitBoundsOptions;
 
-  constructor(@Optional() @Inject(GLOBAL_MAP_OPTIONS) private readonly globalOptions: GlobalOptions,
+  constructor(@Optional() @Inject(GLOBAL_MAP_OPTIONS) private readonly globalOptions: OptionsWithControls,
               @Optional() protected mapComponent: MapComponent) {
     super(mapComponent);
   }
@@ -58,7 +58,7 @@ export class BoundsComponent extends ConfigurableMapComponent<FitBoundsOptions> 
       return;
     }
     const bounds = mapboxgl.LngLatBounds.convert(this.convertPolygon());
-    map.fitBounds(bounds, { ...(this.globalOptions.options.fitBoundsOptions || {}), ...this.options });
+    map.fitBounds(bounds, { ...(this.globalOptions.fitBoundsOptions || {}), ...this.options });
   }
 
   /**

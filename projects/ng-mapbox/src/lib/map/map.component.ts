@@ -30,7 +30,7 @@ import {
 import { AsyncSubject } from 'rxjs';
 import { GLOBAL_MAP_OPTIONS } from '../constants';
 import { ChangesHelper, ReflectionHelper } from '../helpers';
-import { GlobalOptions, MapboxEvents } from './map';
+import { MapboxEvents, OptionsWithControls } from './map';
 
 declare const mapboxgl;
 
@@ -43,10 +43,10 @@ declare const mapboxgl;
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class MapComponent implements AfterViewInit, OnChanges, OnDestroy, MapboxOptions, MapboxEvents {
+export class MapComponent implements AfterViewInit, OnChanges, OnDestroy, OptionsWithControls, MapboxEvents {
 
   /* Static Input Variables */
-  @Input() accessToken?: string;
+  @Input() accessToken: string;
   @Input() antialias?: boolean;
   @Input() attributionControl?: boolean;
   @Input() bearingSnap?: number;
@@ -88,8 +88,11 @@ export class MapComponent implements AfterViewInit, OnChanges, OnDestroy, Mapbox
   @Input() touchZoomRotate?: boolean;
   @Input() zoom?: number;
 
+  /* Custom Inputs */
+  @Input() controlPosition: 'top-right' | 'top-left' | 'bottom-right' | 'bottom-left';
+
   /* (Static) Config Input used with/instead of individual properties */
-  @Input() config?: Omit<MapboxOptions, 'container'>;
+  @Input() config?: OptionsWithControls;
 
   /* Map Container */
   @ViewChild('container', { static: true, read: ElementRef }) container: ElementRef | any;
@@ -148,7 +151,7 @@ export class MapComponent implements AfterViewInit, OnChanges, OnDestroy, Mapbox
   public readonly mapCreated$ = new AsyncSubject<mapboxgl.Map>();
   public readonly mapLoaded$ = new AsyncSubject<mapboxgl.Map>();
 
-  constructor(@Optional() @Inject(GLOBAL_MAP_OPTIONS) private readonly globalOptions: GlobalOptions) {
+  constructor(@Optional() @Inject(GLOBAL_MAP_OPTIONS) private readonly globalOptions: OptionsWithControls) {
   }
 
   ngAfterViewInit(): void {
@@ -186,12 +189,11 @@ export class MapComponent implements AfterViewInit, OnChanges, OnDestroy, Mapbox
    * @private
    */
   private setup(): void {
-    const options = ReflectionHelper.getInputs<MapboxOptions>(this, ['config'], { ...this.globalOptions.options, ...this.config });
-    options.container = this.container.nativeElement;
-    this.map = new mapboxgl.Map(options);
+    const options = ReflectionHelper.getInputs<OptionsWithControls>(this, ['config'], { ...this.globalOptions, ...this.config });
+    this.map = new mapboxgl.Map({ ...options, container: this.container.nativeElement });
     this.mapCreated$.next(this.map);
     this.mapCreated$.complete();
-    this.globalOptions.controls.forEach(control => this.map.addControl(control, this.globalOptions.controlPosition));
+    (options.controls || []).forEach(control => this.map.addControl(control, options.controlPosition));
     this.map.on('load', () => {
       this.mapLoaded$.next(this.map);
       this.mapLoaded$.complete();

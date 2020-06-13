@@ -1,6 +1,6 @@
 import { ModuleWithProviders, NgModule } from '@angular/core';
 import { GLOBAL_MAP_OPTIONS } from './constants';
-import { GlobalOptions } from './map/map';
+import { OptionsWithControls } from './map/map';
 import { MapComponent } from './map/map.component';
 import { LayerComponent } from './layer/layer.component';
 import { MarkerComponent } from './marker/marker.component';
@@ -31,18 +31,15 @@ const EXPORT_COMPONENTS = [
     ...EXPORT_COMPONENTS,
   ],
 })
-export class SmMapboxModule {
+export class MapboxModule {
 
-  static forRoot(options: GlobalOptions): ModuleWithProviders {
+  static forRoot(options: OptionsWithControls): ModuleWithProviders {
     return {
-      ngModule: SmMapboxModule,
+      ngModule: MapboxModule,
       providers: [
         {
           provide: GLOBAL_MAP_OPTIONS,
-          useValue: <GlobalOptions>{
-            options: options?.options || {},
-            controls: options?.controls || [],
-          },
+          useValue: options,
         },
       ],
     };

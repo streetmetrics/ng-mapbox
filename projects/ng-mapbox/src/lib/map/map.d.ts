@@ -16,9 +16,9 @@ import {
 /**
  * Global Map setup options
  */
-export interface GlobalOptions {
-  options: Omit<MapboxOptions, 'container'>;
-  controls: Control[];
+export interface OptionsWithControls extends Omit<MapboxOptions, 'container'> {
+  accessToken: string;
+  controls?: Control[];
   controlPosition?: 'top-right' | 'top-left' | 'bottom-right' | 'bottom-left';
 }
 
