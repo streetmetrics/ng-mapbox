@@ -1,13 +1,5 @@
 import { EventEmitter } from '@angular/core';
-import { chain, get, isNil, omitBy, pickBy } from 'lodash';
-
-/**
- * Decorator Invocation model for decorator properties on a Component
- */
-interface DecoratorInvocation {
-  type: () => void;
-  args?: any[];
-}
+import { chain, isNil, omitBy, get } from 'lodash';
 
 /**
  * Helper utility class to assist in retrieving ngMetadata from Components
@@ -19,7 +11,11 @@ export class ReflectionHelper {
    * @param component - the Component to scan for @Output() properties
    */
   static getActiveOutputs<T>(component: any): Partial<T> {
-    const outputs = pickBy(component, value => value instanceof EventEmitter && !!value.observers.length);
+    const emitters: Record<string, string> = get(component, 'constructor.ɵcmp.outputs', {});
+    const outputs = chain(emitters)
+      .transform((accum, key) => accum[key] = component[key], {})
+      .pickBy((emitter: EventEmitter<any>) => emitter instanceof EventEmitter && !!emitter.observers.length)
+      .value();
     return outputs;
   }
 
@@ -30,10 +26,10 @@ export class ReflectionHelper {
    * @param extra - extra data to append to the output object
    */
   static getInputs<T>(component: any, omit: string[] = [], extra: Record<string, any> = {}): Partial<T> {
-    const properties: Record<string, DecoratorInvocation[]> = (component.constructor as any).propDecorators;
+    const properties: Record<string, string> = get(component, 'constructor.ɵcmp.inputs', {});
     const inputs: Partial<T> = chain(properties)
-      .omitBy((prop, key) => omit.includes(key) || get(prop, '[0].type.prototype.ngMetadataName') !== 'Input')
-      .transform((accum, value, key) => accum[get(value, '[0].args[0]') || key] = component[key], {})
+      .omitBy(key => omit.includes(key))
+      .transform((accum, componentKey, key) => accum[key] = component[componentKey], {})
       .omitBy(isNil)
       .value();
     return omitBy<Partial<T>>({ ...extra, ...inputs }, isNil);
