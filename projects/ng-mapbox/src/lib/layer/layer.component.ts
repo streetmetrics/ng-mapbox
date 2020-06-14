@@ -46,7 +46,7 @@ export class LayerComponent extends ConfigurableMapComponent<Layer> implements O
   @Input() visible?: boolean;
 
   /* (Static) Config Input used with/instead of individual properties */
-  @Input() config: Omit<Layer, 'id'>;
+  @Input() config: Layer;
 
   /* Layer Event Outputs */
   @Output() click = new EventEmitter<MapLayerMouseEvent>();
@@ -122,6 +122,7 @@ export class LayerComponent extends ConfigurableMapComponent<Layer> implements O
       (this.layout || (this.layout = {})).visibility = this.visibility;
     }
     const layer = this.assemble(['visible']) as Layer;
+    this.id = layer.id;
     map.addLayer(layer);
   }
 
@@ -132,11 +133,7 @@ export class LayerComponent extends ConfigurableMapComponent<Layer> implements O
    */
   private bindEvents(map: mapboxgl.Map): void {
     const events = this.getEvents<LayerEvents>();
-    const nameMap = { zoomChange: 'zoom', pitchChange: 'pitch' };
-    forIn(events, (emitter, event: any) => map.on(
-      event in nameMap && nameMap[event] || event.toLowerCase(),
-      this.id, mapboxEvent => emitter.emit(mapboxEvent)),
-    );
+    forIn(events, (emitter, event: any) => map.on(event, this.id, mapboxEvent => emitter.emit(mapboxEvent)));
   }
 
   /**

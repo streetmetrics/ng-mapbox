@@ -90,6 +90,7 @@ export class MapComponent implements AfterViewInit, OnChanges, OnDestroy, Option
 
   /* Custom Inputs */
   @Input() controlPosition: 'top-right' | 'top-left' | 'bottom-right' | 'bottom-left';
+  @Input() resizeOnLoad: boolean;
 
   /* (Static) Config Input used with/instead of individual properties */
   @Input() config?: OptionsWithControls;
@@ -181,7 +182,11 @@ export class MapComponent implements AfterViewInit, OnChanges, OnDestroy, Option
    */
   private bindEvents(): void {
     const events = ReflectionHelper.getActiveOutputs<MapboxEvents>(this);
-    forIn(events, (emitter, event: any) => this.map.on(event, mapboxEvent => emitter.emit(mapboxEvent)));
+    const nameMap = { zoomChange: 'zoom', pitchChange: 'pitch' };
+    forIn(events, (emitter, event: any) => this.map.on(
+      event in nameMap && nameMap[event] || event.toLowerCase(),
+      mapboxEvent => emitter.emit(mapboxEvent)),
+    );
   }
 
   /**
@@ -198,6 +203,9 @@ export class MapComponent implements AfterViewInit, OnChanges, OnDestroy, Option
       this.mapLoaded$.next(this.map);
       this.mapLoaded$.complete();
       this.bindEvents();
+      if (this.resizeOnLoad) {
+        this.map.resize();
+      }
     });
   }
 }

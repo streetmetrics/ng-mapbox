@@ -39,7 +39,7 @@ export class ConfigurableMapComponent<T> {
    * @param nameMap - object mapping certain @Output() keys to other Mapbox-friendly event names
    * @protected
    */
-  protected getEvents<EventMap>(nameMap: Partial<Record<keyof T, string>> = {}): Partial<EventMap> {
+  protected getEvents<EventMap>(nameMap: Partial<Record<keyof EventMap, string>> = {}): Partial<EventMap> {
     const outputs = ReflectionHelper.getActiveOutputs<EventMap>(this);
     return mapKeys(outputs, (_, key) => key in nameMap && nameMap[key] || key.toLowerCase()) as Partial<EventMap>;
   }
