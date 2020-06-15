@@ -34,8 +34,8 @@ export class MapControlService {
    * @param replace - whether or not this Control should replace existing instance of Control type
    */
   addControl(control: Control | SMControl<any>, position: ControlPosition, replace = false): Control {
-    const newControl: Control = control instanceof Control ? control : control.buildControl();
-    if (isNil(newControl) || !(newControl instanceof Control)) {
+    const newControl: Control = control instanceof SMControl ? control.buildControl() : control;
+    if (isNil(newControl)) {
       throw new Error('Invalid Control passed to MapControlService');
     }
     if (replace) {

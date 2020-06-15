@@ -9,7 +9,7 @@ declare const mapboxgl;
  */
 export class SMNavigationControl extends SMControl<NavigationControlOptions> {
 
-  constructor(private options: NavigationControlOptions) {
+  constructor(private options: NavigationControlOptions = {}) {
     super();
   }
 
