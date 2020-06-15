@@ -10,6 +10,7 @@ import { VectorSourceComponent } from './source/vector.component';
 import { GeoJSONComponent } from './source/geojson.component';
 import { BoundsComponent } from './bounds/bounds.component';
 import { NavigationControlComponent } from './control/navigation/navigation.component';
+import { GeolocatorControlComponent } from './control/geolocator/geolocator.component';
 
 const EXPORT_COMPONENTS = [
   MapComponent,
@@ -18,6 +19,7 @@ const EXPORT_COMPONENTS = [
   ImageComponent,
   LayerComponent,
   MarkerComponent,
+  GeolocatorControlComponent,
   NavigationControlComponent,
   PopupDirective,
   VectorSourceComponent,

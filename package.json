@@ -1,6 +1,6 @@
 {
   "name": "@streetmetrics/ng-mapbox",
-  "version": "1.0.1-beta",
+  "version": "1.0.3-beta",
   "description": "Angular bindings for mapbox-gl",
   "author": "Greyson Von Hagel",
   "license": "MIT",
@@ -28,6 +28,7 @@
     "@angular/platform-browser": "~9.1.9",
     "@angular/platform-browser-dynamic": "~9.1.9",
     "@angular/router": "~9.1.9",
+    "@mapbox/mapbox-gl-geocoder": "^4.5.1",
     "lodash": "^4.17.15",
     "mapbox-gl": "^1.11.0",
     "rxjs": "~6.5.4",

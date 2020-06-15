@@ -12,14 +12,16 @@ import {
   MapTouchEvent,
   MapWheelEvent,
 } from 'mapbox-gl';
+import { SMControl } from '../abstract';
+import { ControlPosition } from '../control/control';
 
 /**
  * Global Map setup options
  */
 export interface OptionsWithControls extends Omit<MapboxOptions, 'container'> {
   accessToken: string;
-  controls?: Control[];
-  controlPosition?: 'top-right' | 'top-left' | 'bottom-right' | 'bottom-left';
+  controls?: (Control | SMControl<any>)[];
+  controlPosition?: ControlPosition;
   resizeOnLoad?: boolean;
 }
 

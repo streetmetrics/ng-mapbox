@@ -1,60 +1,38 @@
-import { Component, ChangeDetectionStrategy, OnDestroy, AfterContentInit, Optional, Input, Inject } from '@angular/core';
-import { Control } from 'mapbox-gl';
-import { ConfigurableMapComponent } from '../../abstract';
-import { GLOBAL_MAP_OPTIONS } from '../../constants';
-import { OptionsWithControls } from '../../map/map';
-import { MapComponent } from '../../map/map.component';
-import { isNil } from 'lodash';
-
-declare const mapboxgl;
+import { Component, ChangeDetectionStrategy, OnDestroy, AfterContentInit, Input } from '@angular/core';
+import { pick } from 'lodash';
+import { ControlPosition } from '../control';
+import { MapControlService } from '../control.service';
+import { NavigationControlOptions } from './navigation';
+import { SMNavigationControl } from './navigation.control';
 
 @Component({
   selector: 'sm-navigation-control',
   template: '',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class NavigationControlComponent extends ConfigurableMapComponent<mapboxgl.NavigationControl> implements AfterContentInit, OnDestroy {
+export class NavigationControlComponent implements AfterContentInit, OnDestroy, NavigationControlOptions {
 
   /* Static Inputs */
-  @Input() position?: 'top-right' | 'top-left' | 'bottom-right' | 'bottom-left';
   @Input() showCompass: boolean;
   @Input() showZoom: boolean;
   @Input() visualizePitch: boolean;
 
   /* Custom Inputs */
+  @Input() position?: ControlPosition;
   @Input() replaceGlobal = true;
 
-  private control: Control;
+  private control: SMNavigationControl;
 
-  constructor(@Optional() @Inject(GLOBAL_MAP_OPTIONS) private readonly globalOptions: OptionsWithControls,
-              @Optional() protected mapComponent: MapComponent) {
-    super(mapComponent);
+  constructor(private controlService: MapControlService) {
   }
 
   ngAfterContentInit(): void {
-    this.mapComponent.mapCreated$.subscribe((map) => {
-      const options = this.assemble(['position']);
-      this.control = new mapboxgl.NavigationControl(options);
-      this.replaceGlobalControl();
-      map.addControl(this.control, this.position);
-    });
+    const options: NavigationControlOptions = pick(this, ['showCompass', 'showZoom', 'visualizePitch']);
+    this.control = new SMNavigationControl(options);
+    this.controlService.addControl(this.control, this.position, true);
   }
 
   ngOnDestroy(): void {
-    this.mapInstance.removeControl(this.control);
-  }
-
-  /**
-   * Attempt to replace the globally configured Control of this type, if one exists
-   * @private
-   */
-  private replaceGlobalControl(): void {
-    if (!this.replaceGlobal) {
-      return;
-    }
-    const existing = (this.globalOptions.controls || []).find(control => control instanceof mapboxgl.NavigationControl);
-    if (!isNil(existing)) {
-      this.mapInstance.removeControl(existing);
-    }
+    this.controlService.removeControl(this.control.control);
   }
 }

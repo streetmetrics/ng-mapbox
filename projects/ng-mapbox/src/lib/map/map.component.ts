@@ -17,7 +17,7 @@ import {
   LngLatBoundsLike,
   LngLatLike,
   MapboxEvent,
-  MapboxOptions, MapBoxZoomEvent,
+  MapBoxZoomEvent,
   MapContextEvent,
   MapDataEvent,
   MapMouseEvent,
@@ -29,6 +29,8 @@ import {
 } from 'mapbox-gl';
 import { AsyncSubject } from 'rxjs';
 import { GLOBAL_MAP_OPTIONS } from '../constants';
+import { ControlPosition } from '../control/control';
+import { MapControlService } from '../control/control.service';
 import { ChangesHelper, ReflectionHelper } from '../helpers';
 import { MapboxEvents, OptionsWithControls } from './map';
 
@@ -41,6 +43,7 @@ declare const mapboxgl;
     ':host { display: block; height: 100%; width: 100%; }',
     'div { height: 100%; width: 100% }',
   ],
+  providers: [MapControlService],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class MapComponent implements AfterViewInit, OnChanges, OnDestroy, OptionsWithControls, MapboxEvents {
@@ -89,7 +92,7 @@ export class MapComponent implements AfterViewInit, OnChanges, OnDestroy, Option
   @Input() zoom?: number;
 
   /* Custom Inputs */
-  @Input() controlPosition: 'top-right' | 'top-left' | 'bottom-right' | 'bottom-left';
+  @Input() controlPosition: ControlPosition;
   @Input() resizeOnLoad: boolean;
 
   /* (Static) Config Input used with/instead of individual properties */
@@ -152,7 +155,8 @@ export class MapComponent implements AfterViewInit, OnChanges, OnDestroy, Option
   public readonly mapCreated$ = new AsyncSubject<mapboxgl.Map>();
   public readonly mapLoaded$ = new AsyncSubject<mapboxgl.Map>();
 
-  constructor(@Optional() @Inject(GLOBAL_MAP_OPTIONS) private readonly globalOptions: OptionsWithControls) {
+  constructor(@Optional() @Inject(GLOBAL_MAP_OPTIONS) private readonly globalOptions: OptionsWithControls,
+              private controlService: MapControlService) {
   }
 
   ngAfterViewInit(): void {
@@ -198,7 +202,7 @@ export class MapComponent implements AfterViewInit, OnChanges, OnDestroy, Option
     this.map = new mapboxgl.Map({ ...options, container: this.container.nativeElement });
     this.mapCreated$.next(this.map);
     this.mapCreated$.complete();
-    (options.controls || []).forEach(control => this.map.addControl(control, options.controlPosition));
+    this.controlService.init(this.map, options);
     this.map.on('load', () => {
       this.mapLoaded$.next(this.map);
       this.mapLoaded$.complete();

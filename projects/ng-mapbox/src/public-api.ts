@@ -5,6 +5,7 @@ export * from './lib/ng-mapbox.module';
 
 export * from './lib/bounds/bounds.component';
 
+export * from './lib/control/geolocator/geolocator.component';
 export * from './lib/control/navigation/navigation.component';
 
 export * from './lib/image/image.component';
