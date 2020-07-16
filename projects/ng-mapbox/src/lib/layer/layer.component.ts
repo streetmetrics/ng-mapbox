@@ -143,6 +143,7 @@ export class LayerComponent extends ConfigurableMapComponent<Layer> implements O
    * @private
    */
   private updateAllProperties(type: 'Layout' | 'Paint', map: mapboxgl.Map): void {
-    forIn(this.layout, (value, key) => map[`set${type}Property`](this.id, key, value));
+    const properties = this[type.toLowerCase()];
+    forIn(properties, (value, key) => map[`set${type}Property`](this.id, key, value));
   }
 }
