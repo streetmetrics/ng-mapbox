@@ -74,6 +74,9 @@ export class GeoJSONComponent extends ConfigurableMapComponent<GeoJSONSourceOpti
 
   ngOnDestroy(): void {
     if (!!this.source) {
+      (this.mapInstance.getStyle().layers || [])
+        .filter(layer => 'source' in layer ? layer.source === this.id : false)
+        .forEach(layer => this.mapInstance.removeLayer(layer.id));
       this.mapInstance.removeSource(this.id);
     }
   }
